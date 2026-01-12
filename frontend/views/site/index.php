@@ -5,7 +5,7 @@
 use yii\helpers\Html;
 use yii\helpers\Url;
 
-$this->title = 'Ovoza - Ovozni matnga aylantirish';
+$this->title = 'Ovoza - ovozni matnga aylantirish';
 ?>
 
 <style>
