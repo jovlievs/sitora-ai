@@ -1,43 +1,142 @@
-# yii console commands
+# ============================================
+# YII2 CONSOLE
+# ============================================
 /yii
 /yii_test
 /yii_test.bat
 
-# phpstorm project files
+# ============================================
+# SECURITY - CRITICAL!
+# ============================================
+
+# Local configuration files (CONTAIN SECRETS!)
+*-local.php
+.env
+.env.local
+.env.*.local
+
+# ============================================
+# YII2 RUNTIME & CACHE
+# ============================================
+
+# Runtime directories (logs, cache, sessions)
+/frontend/runtime/*
+/backend/runtime/*
+/console/runtime/*
+/api/runtime/*
+!*/runtime/.gitkeep
+
+# Web assets cache
+/frontend/web/assets/*
+/backend/web/assets/*
+!*/web/assets/.gitkeep
+
+# ============================================
+# USER UPLOADS (IMPORTANT!)
+# ============================================
+
+# User uploaded files (your audio files!)
+/frontend/web/uploads/*
+/backend/web/uploads/*
+!/frontend/web/uploads/.gitkeep
+!/backend/web/uploads/.gitkeep
+
+# ============================================
+# DATABASE
+# ============================================
+
+# Database dumps
+*.sql
+*.sqlite
+*.db
+/backups/
+/dumps/
+
+# ============================================
+# DEPENDENCIES
+# ============================================
+
+# Composer
+/vendor/
+composer.phar
+
+# NPM (if you use it)
+node_modules/
+package-lock.json
+
+# ============================================
+# IDE & EDITORS
+# ============================================
+
+# PhpStorm
 .idea
 
-# netbeans project files
+# NetBeans
 nbproject
 
-# zend studio for eclipse project files
+# Eclipse/Zend Studio
 .buildpath
 .project
 .settings
 
-# windows thumbnail cache
+# VS Code
+.vscode/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+
+# ============================================
+# OPERATING SYSTEM
+# ============================================
+
+# Windows
 Thumbs.db
+Desktop.ini
 
-# composer vendor dir
-/vendor
-
-# composer itself is not needed
-composer.phar
-
-# Mac DS_Store Files
+# macOS
 .DS_Store
+.AppleDouble
 
-# phpunit itself is not needed
+# Linux
+*~
+
+# ============================================
+# TESTING & LOGS
+# ============================================
+
+# PHPUnit
 phpunit.phar
-# local phpunit config
 /phpunit.xml
+/tests/_output/*
 
-# vagrant runtime
-/.vagrant
+# Log files
+*.log
 
-# ignore generated files
+# ============================================
+# GENERATED FILES
+# ============================================
+
+# Generated web entry points
 /frontend/web/index.php
 /frontend/web/index-test.php
 /frontend/web/robots.txt
 /backend/web/index.php
 /backend/web/index-test.php
 /backend/web/robots.txt
+
+# ============================================
+# OTHER
+# ============================================
+
+# Vagrant
+/.vagrant
+
+# Certificates
+*.pem
+*.key
+*.crt
