@@ -7,13 +7,16 @@ use yii\helpers\Url;
 /* @var $jobs common\models\TranscriptionJob[] */
 
 $this->title = 'Dashboard - Ovoza';
+$user  = Yii::$app->user->identity;
+$route = Yii::$app->controller->route; // e.g. transcription/index
 
-// Get current user
-$user = Yii::$app->user->identity;
+// URLS
+$uploadUrl  = Url::to(['transcription/upload']);
+$cancelUrl  = Url::to(['transcription/cancel']);
+$streamTpl  = Url::to(['transcription/stream', 'id' => '__ID__']); // template
 ?>
 
     <style>
-        /* Dashboard Dark Theme */
         :root {
             --dark-bg: #0F0F1E;
             --sidebar-bg: #1A1A2E;
@@ -39,7 +42,6 @@ $user = Yii::$app->user->identity;
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .dashboard-sidebar {
             width: 280px;
             background: var(--sidebar-bg);
@@ -107,6 +109,12 @@ $user = Yii::$app->user->identity;
             border-radius: 8px;
             margin-bottom: 0.25rem;
             transition: all 0.2s;
+            background: transparent;
+            border: 0;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font: inherit;
         }
 
         .nav-item:hover {
@@ -120,15 +128,6 @@ $user = Yii::$app->user->identity;
             font-weight: 600;
         }
 
-        .nav-icon {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Wallet Card */
         .sidebar-wallet {
             padding: 1rem;
             border-top: 1px solid rgba(124, 58, 237, 0.1);
@@ -144,9 +143,6 @@ $user = Yii::$app->user->identity;
             font-size: 0.875rem;
             color: var(--text-muted);
             margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .wallet-amount {
@@ -160,15 +156,10 @@ $user = Yii::$app->user->identity;
             color: var(--text-muted);
         }
 
-        /* Main Content */
         .dashboard-main {
             flex: 1;
             margin-left: 280px;
             padding: 2rem;
-        }
-
-        .dashboard-header {
-            margin-bottom: 2rem;
         }
 
         .greeting {
@@ -181,7 +172,6 @@ $user = Yii::$app->user->identity;
             color: var(--text-muted);
         }
 
-        /* Quick Actions Grid */
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -229,7 +219,6 @@ $user = Yii::$app->user->identity;
             color: var(--text-muted);
         }
 
-        /* Jobs Section */
         .jobs-section {
             background: var(--sidebar-bg);
             border-radius: 16px;
@@ -242,92 +231,140 @@ $user = Yii::$app->user->identity;
             margin-bottom: 1.5rem;
         }
 
-        .jobs-table {
-            width: 100%;
-            border-collapse: collapse;
+        .jobs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
-        .jobs-table thead th {
-            text-align: left;
-            padding: 1rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 0.875rem;
-            border-bottom: 1px solid rgba(124, 58, 237, 0.1);
+        .job-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
         }
 
-        .jobs-table tbody td {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(124, 58, 237, 0.05);
+        .job-item:hover {
+            background: rgba(124, 58, 237, 0.1);
+            transform: translateX(4px);
         }
 
-        .status-badge {
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .status-pending { background: rgba(251, 191, 36, 0.15); color: #FCD34D; }
-        .status-processing { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
-        .status-completed { background: rgba(16, 185, 129, 0.15); color: #34D399; }
-        .status-failed { background: rgba(239, 68, 68, 0.15); color: #F87171; }
-        .status-cancelled { background: rgba(148, 163, 184, 0.15); color: #94A3B8; }
-
-        .btn-action {
-            padding: 0.5rem 1rem;
+        .play-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            background: rgba(255, 255, 255, 0.08);
             border: none;
-            border-radius: 6px;
-            font-size: 0.875rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        .play-btn:hover {
+            background: var(--primary-purple);
+            transform: scale(1.1);
+        }
+
+        .job-info { flex: 1; min-width: 0; }
+
+        .job-inline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .job-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .job-meta {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            white-space: nowrap;
+            min-width: 0;
+            opacity: .85;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .status-badge-compact {
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            flex: 0 0 auto;
+        }
+
+        .status-completed { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+        .status-processing { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+        .status-pending { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+        .status-failed { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+        .status-cancelled { background: rgba(148,163,184,0.15); color: #CBD5E1; }
+
+        .view-btn{
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 36px;
+            padding: 0 12px;
+            min-width: 92px;
+            border-radius: 999px;
+            background: rgba(124,58,237,0.22);
+            border: 1px solid rgba(124,58,237,0.45);
+            color: #EDE9FE;
+            font-weight: 700;
             text-decoration: none;
-            display: inline-block;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            transition: .2s;
         }
 
-        .btn-view {
-            background: rgba(124, 58, 237, 0.15);
-            color: var(--primary-purple);
-        }
-
-        .btn-view:hover {
-            background: rgba(124, 58, 237, 0.25);
-        }
-
-        .btn-cancel {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger);
-        }
-
-        .btn-cancel:hover {
-            background: rgba(239, 68, 68, 0.25);
+        .view-btn:hover{
+            background: rgba(124,58,237,0.32);
+            border-color: rgba(124,58,237,0.65);
+            transform: translateY(-1px);
         }
 
         .empty-state {
             text-align: center;
-            padding: 3rem;
+            padding: 4rem 2rem;
             color: var(--text-muted);
         }
 
-        /* Upload Modal */
         #upload-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
 
-        #upload-modal.show {
-            display: flex;
-        }
+        #upload-modal.show { display: flex; }
 
         .modal-content {
             background: var(--sidebar-bg);
@@ -335,105 +372,98 @@ $user = Yii::$app->user->identity;
             padding: 2rem;
             max-width: 500px;
             width: 90%;
+            position: relative;
         }
 
         .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
             background: none;
             border: none;
+            font-size: 2rem;
             color: var(--text-muted);
-            font-size: 1.5rem;
             cursor: pointer;
-            float: right;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .dashboard-sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-            }
+        #list-player {
+            position: absolute;
+            width: 0;
+            height: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
 
-            .dashboard-main {
-                margin-left: 0;
-            }
+        @media (max-width: 768px) {
+            .dashboard-sidebar { transform: translateX(-100%); }
+            .dashboard-main { margin-left: 0; }
         }
     </style>
 
     <div class="dashboard-wrapper">
-        <!-- Sidebar -->
         <aside class="dashboard-sidebar">
             <div class="sidebar-logo">
-                <a href="<?= Url::home() ?>" class="sidebar-logo-link">
-                    <div class="sidebar-logo-icon">🎤</div>
+                <a href="<?= Url::to(['transcription/index']) ?>" class="sidebar-logo-link">
+                    <div class="sidebar-logo-icon">🎙️</div>
                     <span>Ovoza</span>
                 </a>
             </div>
 
             <nav class="sidebar-nav">
                 <div class="nav-section">
-                    <a href="<?= Url::to(['transcription/index']) ?>" class="nav-item active">
-                        <span class="nav-icon">🏠</span>
+                    <div class="nav-section-title">Menyu</div>
+
+                    <a href="<?= Url::to(['transcription/index']) ?>"
+                       class="nav-item <?= $route === 'transcription/index' ? 'active' : '' ?>">
+                        <span>🏠</span>
                         <span>Bosh sahifa</span>
                     </a>
-                </div>
 
-                <div class="nav-section">
-                    <div class="nav-section-title">Xizmatlar</div>
-                    <a href="<?= Url::to(['transcription/index']) ?>" class="nav-item">
-                        <span class="nav-icon">🎙️</span>
-                        <span>Ovozdan matnga (STT)</span>
-                    </a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Sozlamalar</div>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">📊</span>
+                    <a href="<?= Url::to(['transcription/history']) ?>"
+                       class="nav-item <?= $route === 'transcription/history' ? 'active' : '' ?>">
+                        <span>📊</span>
                         <span>Tarix</span>
                     </a>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">👤</span>
+
+                    <a href="<?= Url::to(['profile/index']) ?>"
+                       class="nav-item <?= strpos($route, 'profile/') === 0 ? 'active' : '' ?>">
+                        <span>👤</span>
                         <span>Profil</span>
                     </a>
-                    <a href="<?= Url::to(['site/logout']) ?>" class="nav-item" data-method="post">
-                        <span class="nav-icon">🚪</span>
+
+                    <?= Html::beginForm(['site/logout'], 'post', ['style' => 'margin-top:6px;']) ?>
+                    <button type="submit" class="nav-item">
+                        <span>🚪</span>
                         <span>Chiqish</span>
-                    </a>
+                    </button>
+                    <?= Html::endForm() ?>
                 </div>
             </nav>
 
             <div class="sidebar-wallet">
                 <div class="wallet-card">
-                    <div class="wallet-label">
-                        💰 Balans
-                    </div>
+                    <div class="wallet-label">💰 Balans</div>
                     <div class="wallet-amount">
-                        <?= number_format($user->wallet_balance, 2, '.', ' ') ?>
+                        <?= number_format((float)$user->wallet_balance, 2, '.', ' ') ?>
                         <span class="wallet-currency">UZS</span>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="dashboard-main">
             <div class="dashboard-header">
                 <h1 class="greeting">
                     <?php
-                    $hour = date('H');
-                    if ($hour < 12) {
-                        echo "Xayrli tong";
-                    } elseif ($hour < 18) {
-                        echo "Xayrli kun";
-                    } else {
-                        echo "Xayrli kech";
-                    }
+                    $hour = (int)date('H');
+                    if ($hour < 12) echo "Xayrli tong";
+                    elseif ($hour < 18) echo "Xayrli kun";
+                    else echo "Xayrli kech";
                     ?>, <?= Html::encode($user->username) ?>! 👋
                 </h1>
                 <p class="greeting-subtitle">Ovoza platformasiga xush kelibsiz</p>
             </div>
 
-            <!-- Quick Actions -->
             <div class="quick-actions">
                 <div class="action-card" onclick="openUploadModal()">
                     <div class="action-icon">📁</div>
@@ -448,7 +478,6 @@ $user = Yii::$app->user->identity;
                 </div>
             </div>
 
-            <!-- Jobs Section -->
             <div class="jobs-section">
                 <h2 class="section-title">Mening ishlarim</h2>
 
@@ -459,72 +488,81 @@ $user = Yii::$app->user->identity;
                         <p style="font-size: 0.875rem;">Audio yuklang va boshlang!</p>
                     </div>
                 <?php else: ?>
-                    <table class="jobs-table">
-                        <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Fayl nomi</th>
-                            <th>Davomiyligi</th>
-                            <th>Narx</th>
-                            <th>Holat</th>
-                            <th>Sana</th>
-                            <th>Amallar</th>
-                        </tr>
-                        </thead>
-                        <tbody>
+                    <div class="jobs-list">
                         <?php foreach ($jobs as $job): ?>
-                            <tr>
-                                <td><code style="color: var(--primary-purple);">#<?= $job->id ?></code></td>
-                                <td><?= Html::encode($job->audio_filename) ?></td>
-                                <td><?= $job->getFormattedDuration() ?></td>
-                                <td><?= number_format($job->cost, 2) ?> UZS</td>
-                                <td>
-                                <span class="status-badge status-<?= $job->status ?>">
-                                    <?= $job->getStatusLabel() ?>
-                                </span>
-                                </td>
-                                <td><?= date('d.m.Y H:i', $job->created_at) ?></td>
-                                <td>
-                                    <a href="<?= Url::to(['view', 'id' => $job->id]) ?>" class="btn-action btn-view">
-                                        Ko'rish
-                                    </a>
-                                    <?php if ($job->canBeCancelled()): ?>
-                                        <button class="btn-action btn-cancel cancel-job" data-job-id="<?= $job->id ?>">
-                                            Bekor qilish
-                                        </button>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
+                            <?php
+                            $langLabel = strtoupper((string)($job->language ?? 'UZ'));
+
+                            $statusRaw = (string)$job->status;
+                            $st = 'pending';
+                            if (in_array($statusRaw, ['completed','done','ready','success', '2', 2, 'tayyor'], true)) $st = 'completed';
+                            elseif (in_array($statusRaw, ['processing', '1', 1], true)) $st = 'processing';
+                            elseif (in_array($statusRaw, ['failed','error', '3', 3], true)) $st = 'failed';
+                            elseif (in_array($statusRaw, ['cancelled','canceled', '4', 4], true)) $st = 'cancelled';
+
+                            $viewUrl = Url::to(['view', 'id' => (int)$job->id]);
+                            ?>
+
+                            <div class="job-item" onclick="window.location='<?= $viewUrl ?>'">
+                                <button class="play-btn" type="button"
+                                        onclick="event.stopPropagation(); playAudio(<?= (int)$job->id ?>)">
+                                    ▶
+                                </button>
+
+                                <div class="job-info">
+                                    <div class="job-inline">
+                                        <h4 class="job-title">Audio #<?= (int)$job->id ?></h4>
+
+                                        <div class="job-meta" title="<?= Html::encode($langLabel) ?>">
+                                            <span><?= Html::encode(date('M j, Y', (int)$job->created_at)) ?></span>
+                                            <span><?= Html::encode(date('h:i A', (int)$job->created_at)) ?></span>
+                                            <span><?= Html::encode($langLabel) ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <span class="status-badge-compact status-<?= Html::encode($st) ?>">
+                                <?= $st === 'completed' ? 'SUCCESS' : strtoupper($st) ?>
+                            </span>
+
+                                <a class="view-btn"
+                                   href="<?= $viewUrl ?>"
+                                   onclick="event.stopPropagation();"
+                                   title="Ko'rish">Ko'rish</a>
+                            </div>
                         <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    </div>
+
+                    <audio id="list-player" preload="none"></audio>
                 <?php endif; ?>
             </div>
         </main>
     </div>
 
-    <!-- Upload Modal -->
     <div id="upload-modal">
         <div class="modal-content">
-            <button class="modal-close" onclick="closeUploadModal()">×</button>
+            <button class="modal-close" type="button" onclick="closeUploadModal()">×</button>
             <h3 style="margin-bottom: 1.5rem;">Audio yuklash</h3>
 
-            <form id="upload-form" enctype="multipart/form-data">
+            <form id="upload-modal-form" action="<?= $uploadUrl ?>" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->csrfToken ?>">
+
                 <div style="margin-bottom: 1.5rem;">
-                    <input type="file" id="audio-file" name="audio" accept=".wav,.mp3,.ogg" required
+                    <input type="file" id="audioFile" name="audioFile" accept=".wav,.mp3,.ogg" required
                            style="width: 100%; padding: 1rem; background: var(--card-bg); border: 2px dashed var(--primary-purple); border-radius: 8px; color: var(--text-light);">
                     <p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-muted);">
                         WAV, MP3, OGG (max 100MB)
                     </p>
                 </div>
 
-                <button type="submit" class="btn-action" id="upload-btn" style="width: 100%; background: var(--primary-purple); color: white; padding: 1rem;">
+                <button type="submit" id="upload-btn"
+                        style="width: 100%; background: var(--primary-purple); color: white; padding: 1rem; border:0; border-radius:12px; font-weight:700; cursor:pointer;">
                     Yuklash
                 </button>
 
                 <div id="upload-progress" style="display: none; margin-top: 1rem;">
                     <div style="background: var(--card-bg); height: 8px; border-radius: 4px; overflow: hidden;">
-                        <div style="background: var(--primary-purple); height: 100%; width: 100%; transition: width 0.3s;" class="progress-bar-animated"></div>
+                        <div style="background: var(--primary-purple); height: 100%; width: 100%; transition: width 0.3s;"></div>
                     </div>
                     <p style="margin-top: 0.5rem; text-align: center; color: var(--text-muted);">Yuklanmoqda...</p>
                 </div>
@@ -535,95 +573,78 @@ $user = Yii::$app->user->identity;
     </div>
 
 <?php
-$uploadUrl = Url::to(['transcription/upload']);
-$cancelUrl = Url::to(['transcription/cancel']);
-
 $js = <<<JS
-function openUploadModal() {
-    document.getElementById('upload-modal').classList.add('show');
-}
+window.openUploadModal = function() {
+  var modal = document.getElementById('upload-modal');
+  if (modal) modal.classList.add('show');
+};
 
-function closeUploadModal() {
-    document.getElementById('upload-modal').classList.remove('show');
-}
+window.closeUploadModal = function() {
+  var modal = document.getElementById('upload-modal');
+  if (modal) modal.classList.remove('show');
+};
 
-// Upload form - WORKING CODE from jQuery version!
+window.playAudio = function(jobId) {
+  var player = document.getElementById('list-player');
+  if (!player) return;
+
+  var url = "{$streamTpl}".replace('__ID__', jobId);
+  player.dataset.currentId = String(jobId);
+  player.src = url;
+
+  player.load();
+  player.play().catch(function(err) {
+    console.error('play() error', err);
+    alert("Brauzer audio'ni avtomatik boshlashga ruxsat bermadi. Yana bir marta bosing.");
+  });
+};
+
 jQuery(document).ready(function($) {
-    $('#upload-form').on('submit', function(e) {
-        e.preventDefault();
-        
-        var formData = new FormData(this);
-        var uploadBtn = $('#upload-btn');
-        var progressDiv = $('#upload-progress');
-        var resultDiv = $('#upload-result');
-        
-        uploadBtn.prop('disabled', true);
-        progressDiv.show();
-        resultDiv.hide();
-        
-        $.ajax({
-            url: '$uploadUrl',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                progressDiv.hide();
-                uploadBtn.prop('disabled', false);
-                
-                if (response.success) {
-                    resultDiv.css({
-                        'display': 'block',
-                        'background': 'rgba(16, 185, 129, 0.15)',
-                        'color': '#34D399'
-                    }).html('✅ ' + response.message + '<br>Narx: ' + response.cost + ' UZS');
-                    
-                    setTimeout(function() {
-                        closeUploadModal();
-                        location.reload();
-                    }, 2000);
-                } else {
-                    resultDiv.css({
-                        'display': 'block',
-                        'background': 'rgba(239, 68, 68, 0.15)',
-                        'color': '#F87171'
-                    }).html('❌ ' + response.message);
-                }
-            },
-            error: function() {
-                progressDiv.hide();
-                uploadBtn.prop('disabled', false);
-                resultDiv.css({
-                    'display': 'block',
-                    'background': 'rgba(239, 68, 68, 0.15)',
-                    'color': '#F87171'
-                }).html('❌ Yuklashda xatolik. Qayta urinib ko\'ring.');
-            }
-        });
-    });
-    
-    // Cancel job - WORKING CODE!
-    $('.cancel-job').on('click', function() {
-        if (!confirm('Ishni bekor qilmoqchimisiz?')) {
-            return;
+  $('#upload-modal-form').on('submit', function(e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+    var uploadBtn = $('#upload-btn');
+    var progressDiv = $('#upload-progress');
+    var resultDiv = $('#upload-result');
+
+    uploadBtn.prop('disabled', true);
+    progressDiv.show();
+    resultDiv.hide();
+
+    $.ajax({
+      url: '{$uploadUrl}',
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function(response) {
+        progressDiv.hide();
+        uploadBtn.prop('disabled', false);
+
+        if (response && response.success) {
+          var costHtml = response.cost ? '<br>Narx: ' + response.cost + ' UZS' : '';
+          resultDiv.css({'display': 'block', 'background': 'rgba(16, 185, 129, 0.15)', 'color': '#34D399'})
+                   .html('✅ ' + response.message + costHtml);
+          setTimeout(function() {
+            window.closeUploadModal();
+            location.reload();
+          }, 1200);
+        } else {
+          var msg = (response && response.message) ? response.message : 'Server xatosi';
+          resultDiv.css({'display': 'block', 'background': 'rgba(239, 68, 68, 0.15)', 'color': '#F87171'})
+                   .html('❌ ' + msg);
         }
-        
-        var jobId = $(this).data('job-id');
-        var cancelUrlWithId = '$cancelUrl?id=' + jobId;
-        
-        $.post(cancelUrlWithId, function(response) {
-            if (response.success) {
-                alert(response.message);
-                location.reload();
-            } else {
-                alert('Xato: ' + response.message);
-            }
-        }).fail(function() {
-            alert('So\'rov muvaffaqiyatsiz. Qayta urinib ko\'ring.');
-        });
+      },
+      error: function() {
+        progressDiv.hide();
+        uploadBtn.prop('disabled', false);
+        resultDiv.css({'display': 'block', 'background': 'rgba(239, 68, 68, 0.15)', 'color': '#F87171'})
+                 .html('❌ Yuklashda xatolik');
+      }
     });
+  });
 });
 JS;
 
-$this->registerJs($js);
+$this->registerJs($js, \yii\web\View::POS_END);
 ?>

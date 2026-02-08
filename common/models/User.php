@@ -85,9 +85,15 @@ class User extends ActiveRecord implements IdentityInterface
 
             ['api_enabled', 'boolean'],
             ['api_enabled', 'default', 'value' => 0],
+
+            // Add these new rules:
+            ['verification_token', 'string', 'max' => 255],
+            ['verification_token', 'unique'],
+
+            ['password_reset_token', 'string', 'max' => 255],
+            ['password_reset_token', 'unique'],
         ];
     }
-
     /**
      * {@inheritdoc}
      */
@@ -103,9 +109,10 @@ class User extends ActiveRecord implements IdentityInterface
             'price_per_minute' => 'Price per Minute',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
+            'verification_token' => 'Verification Token',
+            'password_reset_token' => 'Password Reset Token',
         ];
     }
-
     /**
      * Gets query for [[TranscriptionJob]].
      */

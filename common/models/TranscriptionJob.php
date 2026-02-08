@@ -15,6 +15,7 @@ use yii\behaviors\TimestampBehavior;
  * @property string $audio_filename
  * @property string $audio_path
  * @property string $audio_format
+ * @property string $language
  * @property float $audio_duration_seconds
  * @property float $audio_size_mb
  * @property integer $audio_sample_rate
@@ -83,6 +84,9 @@ class TranscriptionJob extends ActiveRecord
             ['audio_format', 'in', 'range' => ['wav', 'mp3', 'ogg']],
             ['audio_format', 'default', 'value' => 'wav'],
 
+            ['language', 'string', 'max' => 10],
+            ['language', 'default', 'value' => 'uz'],
+
             ['audio_duration_seconds', 'number', 'min' => 0.01],
             ['audio_size_mb', 'number', 'min' => 0],
             ['audio_sample_rate', 'integer'],
@@ -122,6 +126,7 @@ class TranscriptionJob extends ActiveRecord
             'audio_filename' => 'Original Filename',
             'audio_path' => 'File Path',
             'audio_format' => 'Format',
+            'language' => 'Language',
             'audio_duration_seconds' => 'Duration (seconds)',
             'audio_size_mb' => 'Size (MB)',
             'audio_sample_rate' => 'Sample Rate',
@@ -348,5 +353,10 @@ class TranscriptionJob extends ActiveRecord
             return true;
         }
         return false;
+    }
+    public function ensureAudioToken(): void {
+        if(empty($this->audio_token)){
+            $this->audio_token = bin2hex(random_bytes(16));
+        }
     }
 }

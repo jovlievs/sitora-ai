@@ -1,11 +1,8 @@
 <?php
 
 /* @var $this yii\web\View */
-/* @var $form yii\bootstrap\ActiveForm */
 /* @var $model \common\models\LoginForm */
 
-use yii\helpers\Html;
-//use yii\bootstrap\ActiveForm;
 use yii\helpers\Url;
 use yii\widgets\ActiveForm;
 
@@ -29,10 +26,9 @@ $this->title = 'Kirish - Ovoza';
         align-items: center;
         justify-content: center;
         position: relative;
-        overflow: hidden;
+        overflow-x: hidden;
     }
 
-    /* Animated Background */
     body::before {
         content: '';
         position: absolute;
@@ -126,15 +122,21 @@ $this->title = 'Kirish - Ovoza';
         font-weight: 500;
     }
 
+    /* ===== FIX INPUT VISIBILITY (CRITICAL) ===== */
     .form-control {
         width: 100%;
         padding: 0.875rem 1rem;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(124, 58, 237, 0.3);
         border-radius: 10px;
-        color: var(--text-light);
         font-size: 1rem;
         transition: all 0.3s;
+
+        /* force text visible */
+        color: var(--text-light) !important;
+        caret-color: var(--text-light) !important;
+        -webkit-text-fill-color: var(--text-light) !important;
+        opacity: 1 !important;
     }
 
     .form-control:focus {
@@ -142,10 +144,24 @@ $this->title = 'Kirish - Ovoza';
         border-color: var(--primary-purple);
         background: rgba(255, 255, 255, 0.08);
         box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        color: var(--text-light) !important;
+        -webkit-text-fill-color: var(--text-light) !important;
     }
 
     .form-control::placeholder {
-        color: var(--text-muted);
+        color: var(--text-muted) !important;
+        opacity: 1 !important;
+    }
+
+    /* Chrome autofill fix */
+    input.form-control:-webkit-autofill,
+    input.form-control:-webkit-autofill:hover,
+    input.form-control:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--text-light) !important;
+        caret-color: var(--text-light) !important;
+        transition: background-color 999999s ease-in-out 0s;
+        box-shadow: 0 0 0px 1000px rgba(255,255,255,0.05) inset !important;
+        border: 1px solid rgba(124, 58, 237, 0.3) !important;
     }
 
     .btn-primary {
@@ -167,22 +183,10 @@ $this->title = 'Kirish - Ovoza';
         box-shadow: 0 10px 25px rgba(124, 58, 237, 0.4);
     }
 
-    .checkbox-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .checkbox-wrapper input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--primary-purple);
-    }
-
-    .checkbox-wrapper label {
-        color: var(--text-muted);
+    .help-block {
+        color: #F87171;
         font-size: 0.875rem;
+        margin-top: 0.5rem;
     }
 
     .auth-footer {
@@ -213,21 +217,6 @@ $this->title = 'Kirish - Ovoza';
     .back-link:hover {
         color: var(--text-light);
     }
-
-    .error-summary {
-        background: rgba(239, 68, 68, 0.15);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        color: #F87171;
-    }
-
-    .help-block {
-        color: #F87171;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
 </style>
 
 <div class="auth-container">
@@ -243,34 +232,35 @@ $this->title = 'Kirish - Ovoza';
         <p class="auth-subtitle">Hisobingizga kiring</p>
 
         <?php $form = ActiveForm::begin([
-            'id' => 'login-form',
-            'options' => ['class' => ''],
-            'fieldConfig' => [
-                'template' => "{label}\n{input}\n{error}",
-                'labelOptions' => ['class' => 'form-label'],
-                'inputOptions' => ['class' => 'form-control'],
-                'errorOptions' => ['class' => 'help-block'],
-            ],
+                'id' => 'login-form',
+                'fieldConfig' => [
+                        'template' => "{label}\n{input}\n{error}",
+                        'labelOptions' => ['class' => 'form-label'],
+                        'inputOptions' => [
+                                'class' => 'form-control',
+                            // extra safety: inline style (beats any global css)
+                                'style' => 'color:#E2E8F0 !important; caret-color:#E2E8F0 !important; -webkit-text-fill-color:#E2E8F0 !important; opacity:1 !important;',
+                        ],
+                        'errorOptions' => ['class' => 'help-block'],
+                ],
         ]); ?>
 
         <?= $form->field($model, 'username')->textInput([
-            'autofocus' => true,
-            'placeholder' => 'Foydalanuvchi nomi',
+                'autofocus' => true,
+                'placeholder' => 'Foydalanuvchi nomi',
+                'autocomplete' => 'username',
         ])->label('Foydalanuvchi nomi') ?>
 
         <?= $form->field($model, 'password')->passwordInput([
-            'placeholder' => 'Parol',
+                'placeholder' => 'Parol',
+                'autocomplete' => 'current-password',
         ])->label('Parol') ?>
 
-        <div class="checkbox-wrapper">
-            <?= $form->field($model, 'rememberMe')->checkbox([
-                'template' => "{input} {label}",
-            ])->label('Eslab qolish') ?>
-        </div>
+        <?= $form->field($model, 'rememberMe')->checkbox([
+                'label' => 'Remember Me',
+        ])->label('Eslab qolish') ?>
 
-        <button type="submit" class="btn-primary">
-            Kirish
-        </button>
+        <button type="submit" class="btn-primary">Kirish</button>
 
         <?php ActiveForm::end(); ?>
 
@@ -278,9 +268,7 @@ $this->title = 'Kirish - Ovoza';
             <p style="color: var(--text-muted); margin-bottom: 0.5rem;">
                 Hisobingiz yo'qmi?
             </p>
-            <a href="<?= Url::to(['site/signup']) ?>">
-                Ro'yxatdan o'tish →
-            </a>
+            <a href="<?= Url::to(['site/signup']) ?>">Ro'yxatdan o'tish →</a>
         </div>
     </div>
 </div>

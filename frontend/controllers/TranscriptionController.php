@@ -26,8 +26,8 @@ class TranscriptionController extends Controller
 
     public function beforeAction($action)
     {
-        // Disable CSRF validation for upload and status actions (to allow guest access)
-        if (in_array($action->id, ['upload', 'status'])) {
+        // Disable CSRF validation only for upload (file upload ajax uchun)
+        if (in_array($action->id, ['upload'], true)) {
             $this->enableCsrfValidation = false;
         }
 
@@ -42,14 +42,19 @@ class TranscriptionController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['index', 'view', 'cancel'], // Removed 'status' to allow guest access
+                'only' => ['index', 'view', 'upload', 'stream', 'cancel', 'status', 'history', 'export'],
                 'rules' => [
                     [
                         'allow' => true,
+                        'actions' => ['index', 'view', 'upload', 'stream', 'cancel', 'history', 'export'],
                         'roles' => ['@'],
                     ],
+                    [
+                        'allow' => true,
+                        'actions' => ['status'],
+                        'roles' => ['?', '@'],
+                    ],
                 ],
-                // Redirect to transcription/index after login
                 'denyCallback' => function () {
                     return Yii::$app->response->redirect(['site/login']);
                 },
@@ -57,13 +62,123 @@ class TranscriptionController extends Controller
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'upload' => ['post'],
-                    'cancel' => ['post'],
+                    'upload' => ['POST'],
+                    'cancel' => ['POST'],
+                    'stream' => ['GET'],
+                    'status' => ['GET'],
+                    'export' => ['GET'],
                 ],
             ],
         ];
     }
+    public function actionHistory()
+    {
+        $user = Yii::$app->user->identity;
 
+        // Base query
+        $query = TranscriptionJob::find()
+            ->where(['user_id' => $user->id])
+            ->orderBy(['created_at' => SORT_DESC]);
+
+        // Search filter
+        $searchQuery = Yii::$app->request->get('search');
+        if (!empty($searchQuery)) {
+            $query->andWhere([
+                'or',
+                ['like', 'audio_id', $searchQuery],
+                ['like', 'transcription_text', $searchQuery],
+            ]);
+        }
+
+        // Status filter
+        $statusFilter = Yii::$app->request->get('status');
+        if (!empty($statusFilter)) {
+            $query->andWhere(['status' => $statusFilter]);
+        }
+
+        // Date range filter
+        $dateRange = Yii::$app->request->get('date_range');
+        if (!empty($dateRange)) {
+            switch ($dateRange) {
+                case 'today':
+                    $start = strtotime('today');
+                    $query->andWhere(['>=', 'created_at', $start]);
+                    break;
+                case 'week':
+                    $start = strtotime('monday this week');
+                    $query->andWhere(['>=', 'created_at', $start]);
+                    break;
+                case 'month':
+                    $start = strtotime('first day of this month');
+                    $query->andWhere(['>=', 'created_at', $start]);
+                    break;
+                case 'year':
+                    $start = strtotime('first day of January this year');
+                    $query->andWhere(['>=', 'created_at', $start]);
+                    break;
+            }
+        }
+
+        $jobs = $query->all();
+
+        // Calculate statistics
+        $stats = [
+            'total' => count($jobs),
+            'completed' => (int) TranscriptionJob::find()
+                ->where(['user_id' => $user->id, 'status' => TranscriptionJob::STATUS_COMPLETED])
+                ->count(),
+            'processing' => (int) TranscriptionJob::find()
+                ->where(['user_id' => $user->id, 'status' => TranscriptionJob::STATUS_PROCESSING])
+                ->count(),
+            'total_cost' => (float) (TranscriptionJob::find()
+                ->where(['user_id' => $user->id])
+                ->sum('cost') ?? 0),
+        ];
+
+        return $this->render('history', [
+            'jobs' => $jobs,
+            'stats' => $stats,
+            'statusFilter' => $statusFilter,
+            'searchQuery' => $searchQuery,
+        ]);
+    }
+    public function actionExport()
+    {
+        $user = Yii::$app->user->identity;
+
+        $jobs = TranscriptionJob::find()
+            ->where(['user_id' => $user->id])
+            ->orderBy(['created_at' => SORT_DESC])
+            ->all();
+
+        // Prepare CSV content
+        $csv = "ID,Audio ID,Status,Til,Davomiyligi,Hajmi (MB),Narx (UZS),So'zlar,Sana\n";
+
+        foreach ($jobs as $job) {
+            $csv .= sprintf(
+                "%d,%s,%s,%s,%s,%.2f,%.2f,%d,%s\n",
+                $job->id,
+                $job->audio_id,
+                $job->getStatusLabel(),
+                $job->language ?? 'uz',
+                $job->getFormattedDuration(),
+                $job->audio_size_mb,
+                $job->cost,
+                $job->word_count ?? 0,
+                date('Y-m-d H:i:s', $job->created_at)
+            );
+        }
+
+        Yii::$app->response->format = Response::FORMAT_RAW;
+        Yii::$app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+        Yii::$app->response->headers->set(
+            'Content-Disposition',
+            'attachment; filename="transcription-history-' . date('Y-m-d') . '.csv"'
+        );
+
+        // UTF-8 BOM for Excel
+        return "ï»¿" . $csv;
+    }
 
     /**
      * Dashboard - List all user's transcription jobs
@@ -89,7 +204,7 @@ class TranscriptionController extends Controller
         Yii::$app->response->format = Response::FORMAT_JSON;
 
         try {
-            $audioFile = UploadedFile::getInstanceByName('audio');
+            $audioFile = UploadedFile::getInstanceByName('audioFile');
             $isGuest = Yii::$app->request->post('guest') === '1';
 
             if (!$audioFile) {
@@ -156,6 +271,7 @@ class TranscriptionController extends Controller
                 'cost' => $cost,
                 'status' => TranscriptionJob::STATUS_PENDING,
             ]);
+            $job->ensureAudioToken();
 
             if (!$job->save()) {
                 $errors = json_encode($job->errors);
@@ -248,6 +364,7 @@ class TranscriptionController extends Controller
                 'cost' => 0, // Free for guests!
                 'status' => TranscriptionJob::STATUS_PENDING,
             ]);
+            $job->ensureAudioToken();
 
             if (!$job->save()) {
                 $errors = json_encode($job->errors);
@@ -293,6 +410,7 @@ class TranscriptionController extends Controller
             ];
         }
     }
+
 
     /**
      * Check job status (for frontend polling)
@@ -396,21 +514,95 @@ class TranscriptionController extends Controller
         return ['success' => false, 'message' => 'Jobni bekor qilishda xatolik'];
     }
 
+    /**
+     * STREAM AUDIO for list play button
+     * URL: /transcription/stream?id=123
+     */
+    public function actionStream($id)
+    {
+        // Faqat login user o'z jobini stream qilsin
+        $job = TranscriptionJob::findOne([
+            'id' => (int)$id,
+            'user_id' => Yii::$app->user->id,
+        ]);
+
+        if (!$job) {
+            throw new NotFoundHttpException('Job not found');
+        }
+
+        if (empty($job->audio_path)) {
+            throw new NotFoundHttpException('Audio path not found');
+        }
+
+        // saveAudioFile() => '/uploads/YYYY/mm/dd/FILE.ext'
+        $audioFullPath = Yii::getAlias('@frontend/web') . $job->audio_path;
+
+        if (!file_exists($audioFullPath) || !is_file($audioFullPath)) {
+            throw new NotFoundHttpException('Audio file not found');
+        }
+
+        $size = filesize($audioFullPath);
+        $ext = strtolower(pathinfo($audioFullPath, PATHINFO_EXTENSION));
+
+        $mimeMap = [
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'ogg' => 'audio/ogg',
+            'm4a' => 'audio/mp4',
+            'aac' => 'audio/aac',
+        ];
+        $mime = $mimeMap[$ext] ?? 'application/octet-stream';
+
+        Yii::$app->response->format = Response::FORMAT_RAW;
+        $headers = Yii::$app->response->headers;
+
+        $headers->set('Content-Type', $mime);
+        $headers->set('Accept-Ranges', 'bytes');
+        $headers->set('Cache-Control', 'private, max-age=0, no-cache, no-store, must-revalidate');
+        $headers->set('Pragma', 'no-cache');
+
+        $range = Yii::$app->request->headers->get('Range');
+
+        // Range support (seek ishlashi uchun)
+        if ($range && preg_match('/bytes=(\d+)-(\d*)/i', $range, $m)) {
+            $start = (int)$m[1];
+            $end = ($m[2] !== '') ? (int)$m[2] : ($size - 1);
+
+            if ($end >= $size) $end = $size - 1;
+            if ($start > $end) $start = 0;
+
+            $length = $end - $start + 1;
+
+            Yii::$app->response->statusCode = 206;
+            $headers->set('Content-Range', "bytes $start-$end/$size");
+            $headers->set('Content-Length', (string)$length);
+
+            $fp = fopen($audioFullPath, 'rb');
+            fseek($fp, $start);
+
+            while (!feof($fp) && $length > 0) {
+                $chunk = fread($fp, min(8192, $length));
+                echo $chunk;
+                flush();
+                $length -= strlen($chunk);
+            }
+            fclose($fp);
+            return;
+        }
+
+        $headers->set('Content-Length', (string)$size);
+        return Yii::$app->response->sendFile($audioFullPath, null, ['inline' => true]);
+    }
+
     // ========================================================================
     // STT PROVIDER ABSTRACTION (Flexible!)
     // ========================================================================
 
-    /**
-     * Get current STT provider (aisha or sitora)
-     */
     protected function getSttProvider()
     {
         return SystemSetting::getValue('stt_provider', 'aisha');
     }
 
-    /**
-     * Send audio to current STT provider
-     */
     protected function sendToSttProvider($job, $task)
     {
         $provider = $this->getSttProvider();
@@ -425,9 +617,6 @@ class TranscriptionController extends Controller
         }
     }
 
-    /**
-     * Check transcription status from current STT provider
-     */
     protected function checkSttProviderStatus($task)
     {
         $provider = $this->getSttProvider();
@@ -443,9 +632,6 @@ class TranscriptionController extends Controller
     // AISHA API INTEGRATION
     // ========================================================================
 
-    /**
-     * Send audio to Aisha API for transcription
-     */
     protected function sendToAishaApi($job, $task)
     {
         $apiKey = SystemSetting::getValue('aisha_api_key');
@@ -514,9 +700,6 @@ class TranscriptionController extends Controller
         }
     }
 
-    /**
-     * Check transcription status from Aisha API
-     */
     protected function checkAishaApiStatus($task)
     {
         $apiKey = SystemSetting::getValue('aisha_api_key');
@@ -547,7 +730,6 @@ class TranscriptionController extends Controller
 
             $responseData = json_decode($response, true);
 
-            // Aisha API uses 'SUCCESS' status and 'transcript' field
             if (isset($responseData['status']) && $responseData['status'] === 'SUCCESS') {
                 if (isset($responseData['transcript'])) {
                     $task->markAsCompleted($responseData['transcript']);
@@ -568,9 +750,6 @@ class TranscriptionController extends Controller
     // SITORA API INTEGRATION (Your own API)
     // ========================================================================
 
-    /**
-     * Send audio to Sitora API for transcription
-     */
     protected function sendToSitoraApi($job, $task)
     {
         $apiBaseUrl = SystemSetting::getValue('sitora_api_url', 'http://localhost:5000');
@@ -631,9 +810,6 @@ class TranscriptionController extends Controller
         }
     }
 
-    /**
-     * Check transcription status from Sitora API
-     */
     protected function checkSitoraApiStatus($task)
     {
         $apiBaseUrl = SystemSetting::getValue('sitora_api_url', 'http://localhost:5000');
@@ -679,9 +855,6 @@ class TranscriptionController extends Controller
     // HELPER METHODS
     // ========================================================================
 
-    /**
-     * Validate uploaded audio file
-     */
     protected function validateAudioFile($file)
     {
         $allowedFormats = SystemSetting::getAllowedAudioFormats();
@@ -705,9 +878,6 @@ class TranscriptionController extends Controller
         return ['valid' => true];
     }
 
-    /**
-     * Get audio duration in seconds
-     */
     protected function getAudioDuration($filePath)
     {
         if (class_exists('\getID3')) {
@@ -727,9 +897,6 @@ class TranscriptionController extends Controller
         return round($fileSizeMb * 60, 2);
     }
 
-    /**
-     * Save audio file to permanent location
-     */
     protected function saveAudioFile($file, $audioId)
     {
         $date = date('Y/m/d');

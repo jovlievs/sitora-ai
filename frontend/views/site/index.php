@@ -487,8 +487,8 @@ $this->title = 'Ovoza - ovozni matnga aylantirish';
             // Upload as guest
             uploadGuestAudio(file);
             <?php else: ?>
-            // Logged in user - redirect to dashboard
-            window.location.href = '<?= Url::to(['transcription/index']) ?>';
+            // Logged in user - upload here and then redirect to result
+            uploadUserAudio(file);
             <?php endif; ?>
         }
     }
@@ -577,6 +577,79 @@ $this->title = 'Ovoza - ovozni matnga aylantirish';
             }
         });
     }
+
+
+    function uploadUserAudio(file) {
+        // Show upload UI (reuse same card)
+        const uploadCard = document.querySelector('.upload-card');
+        uploadCard.innerHTML = `
+        <div class="upload-icon">⏳</div>
+        <p class="upload-text">Audio yuklanmoqda...</p>
+        <div style="background: rgba(124, 58, 237, 0.2); height: 8px; border-radius: 4px; overflow: hidden; margin: 1rem 0;">
+            <div style="background: var(--primary-purple); height: 100%; width: 0%; transition: width 0.3s;" id="progress-bar"></div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Iltimos kuting...</p>
+    `;
+
+        const formData = new FormData();
+        formData.append('audio', file);
+
+        // Start progress animation
+        let progress = 0;
+        const progressBar = document.getElementById('progress-bar');
+        const progressInterval = setInterval(() => {
+            progress += 5;
+            if (progress <= 90) {
+                progressBar.style.width = progress + '%';
+            }
+        }, 200);
+
+        $.ajax({
+            url: '<?= Url::to(['transcription/upload']) ?>',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+
+                if (data.success) {
+                    uploadCard.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <p class="upload-text" style="color: var(--success);">Muvaffaqiyatli yuklandi!</p>
+                    <p style="color: var(--text-muted); margin-top: 1rem;">Natija sahifasiga o'tyapmiz...</p>
+                `;
+
+                    setTimeout(() => {
+                        // Go to job view page
+                        window.location.href = '<?= Url::to(['transcription/view']) ?>?id=' + data.jobId;
+                    }, 800);
+                } else {
+                    uploadCard.innerHTML = `
+                    <div class="upload-icon">❌</div>
+                    <p class="upload-text" style="color: var(--danger);">Xatolik yuz berdi</p>
+                    <p style="color: var(--text-muted); margin-top: 1rem;">${data.message || 'Noma\'lum xato'}</p>
+                    <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--primary-purple); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        Qayta urinish
+                    </button>
+                `;
+                }
+            },
+            error: function(xhr) {
+                clearInterval(progressInterval);
+                uploadCard.innerHTML = `
+                <div class="upload-icon">❌</div>
+                <p class="upload-text" style="color: var(--danger);">Server xatosi</p>
+                <p style="color: var(--text-muted); margin-top: 1rem;">${xhr.responseText || 'Noma\'lum xato'}</p>
+                <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--primary-purple); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Qayta urinish
+                </button>
+            `;
+            }
+        });
+    }
+
 
     function getCsrfToken() {
         // Try to get CSRF token from meta tag

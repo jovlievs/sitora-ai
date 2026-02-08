@@ -155,7 +155,7 @@ class SystemSetting extends ActiveRecord
         
         // Convert value to string for storage
         if ($setting->setting_type === self::TYPE_JSON && is_array($value)) {
-            $setting->setting_value = json_encode($value);
+                $setting->setting_value = json_encode($value);
         } elseif ($setting->setting_type === self::TYPE_BOOLEAN) {
             $setting->setting_value = $value ? '1' : '0';
         } else {

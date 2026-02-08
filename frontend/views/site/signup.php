@@ -10,9 +10,12 @@ use yii\helpers\Url;
 use yii\widgets\ActiveForm;
 
 $this->title = 'Ro\'yxatdan o\'tish - Ovoza';
+
 ?>
 
+
 <style>
+
     :root {
         --dark-bg: #0F0F1E;
         --card-bg: #1A1A2E;
@@ -29,7 +32,7 @@ $this->title = 'Ro\'yxatdan o\'tish - Ovoza';
         align-items: center;
         justify-content: center;
         position: relative;
-        overflow: hidden;
+        overflow-x: hidden;
     }
 
     /* Animated Background */
@@ -211,6 +214,34 @@ $this->title = 'Ro\'yxatdan o\'tish - Ovoza';
         margin-bottom: 1.5rem;
         text-align: center;
     }
+    /* ===== Force input text to be visible (fix Chrome autofill / text-fill issues) ===== */
+    .form-control {
+        color: var(--text-light) !important;
+        caret-color: var(--text-light) !important;
+        -webkit-text-fill-color: var(--text-light) !important; /* IMPORTANT */
+        opacity: 1 !important;
+    }
+
+    /* Placeholder */
+    .form-control::placeholder {
+        color: var(--text-muted) !important;
+        opacity: 1 !important;
+    }
+
+    /* Chrome autofill fix */
+    input.form-control:-webkit-autofill,
+    input.form-control:-webkit-autofill:hover,
+    input.form-control:-webkit-autofill:focus,
+    textarea.form-control:-webkit-autofill,
+    select.form-control:-webkit-autofill {
+        -webkit-text-fill-color: var(--text-light) !important;
+        caret-color: var(--text-light) !important;
+        transition: background-color 999999s ease-in-out 0s; /* remove yellow bg flash */
+        box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset !important; /* keep your dark bg */
+        border: 1px solid rgba(124, 58, 237, 0.3) !important;
+    }
+
+
 </style>
 
 <div class="auth-container">
