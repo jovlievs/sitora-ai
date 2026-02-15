@@ -1,60 +1,119 @@
-<p align="center">
-    <a href="https://github.com/yiisoft" target="_blank">
-        <img src="https://avatars0.githubusercontent.com/u/993323" height="100px">
-    </a>
-    <h1 align="center">Yii 2 Advanced Project Template</h1>
-    <br>
-</p>
+# 🎤 Ovoza - Uzbek Speech-to-Text Platform
 
-Yii 2 Advanced Project Template is a skeleton [Yii 2](https://www.yiiframework.com/) application best for
-developing complex Web applications with multiple tiers.
+> AI-powered speech-to-text transcription service for the Uzbek language
 
-The template includes three tiers: front end, back end, and console, each of which
-is a separate Yii application.
+[![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=flat&logo=php)](https://www.php.net/)
+[![Yii2](https://img.shields.io/badge/Yii2-2.0-green?style=flat)](https://www.yiiframework.com/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-The template is designed to work in a team development environment. It supports
-deploying the application in different environments.
+---
 
-Documentation is at [docs/guide/README.md](docs/guide/README.md).
+## 📖 About
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/yiisoft/yii2-app-advanced.svg)](https://packagist.org/packages/yiisoft/yii2-app-advanced)
-[![Total Downloads](https://img.shields.io/packagist/dt/yiisoft/yii2-app-advanced.svg)](https://packagist.org/packages/yiisoft/yii2-app-advanced)
-[![build](https://github.com/yiisoft/yii2-app-advanced/workflows/build/badge.svg)](https://github.com/yiisoft/yii2-app-advanced/actions?query=workflow%3Abuild)
+**Ovoza** is a web platform that converts Uzbek speech into text using custom-trained AI models. Built to make transcription accessible and easy for everyone.
 
-DIRECTORY STRUCTURE
--------------------
+### Key Features
 
-```
-common
-    config/              contains shared configurations
-    mail/                contains view files for e-mails
-    models/              contains model classes used in both backend and frontend
-    tests/               contains tests for common classes    
-console
-    config/              contains console configurations
-    controllers/         contains console controllers (commands)
-    migrations/          contains database migrations
-    models/              contains console-specific model classes
-    runtime/             contains files generated during runtime
-backend
-    assets/              contains application assets such as JavaScript and CSS
-    config/              contains backend configurations
-    controllers/         contains Web controller classes
-    models/              contains backend-specific model classes
-    runtime/             contains files generated during runtime
-    tests/               contains tests for backend application    
-    views/               contains view files for the Web application
-    web/                 contains the entry script and Web resources
-frontend
-    assets/              contains application assets such as JavaScript and CSS
-    config/              contains frontend configurations
-    controllers/         contains Web controller classes
-    models/              contains frontend-specific model classes
-    runtime/             contains files generated during runtime
-    tests/               contains tests for frontend application
-    views/               contains view files for the Web application
-    web/                 contains the entry script and Web resources
-    widgets/             contains frontend widgets
-vendor/                  contains dependent 3rd-party packages
-environments/            contains environment-based overrides
-```
+- 🇺🇿 **Uzbek Language Specialized** - Custom STT model trained for Uzbek
+- 🎁 **Free Trial** - 3 free transcriptions (2 min each) without signup
+- ⚡ **Real-time Processing** - Instant transcription with live status updates
+- 🔐 **Secure & Private** - Your audio files are protected
+- 📱 **Responsive Design** - Works on desktop and mobile
+
+---
+
+## ✨ What You Can Do
+
+### For Everyone (No Login Required)
+- Upload audio and get transcription instantly
+- Try 3 times for free (up to 2 minutes each)
+- Copy results to clipboard
+- Support: WAV, MP3, OGG formats
+
+### For Registered Users
+- Access all your transcriptions
+- Track processing history
+- Manage multiple jobs
+- Longer audio support (up to 30 minutes)
+
+---
+
+## 🚀 Tech Stack
+
+**Backend**
+- PHP (Yii2 Framework)
+- MySQL Database
+- Job Queue System
+
+**Frontend**
+- HTML5/CSS3, Bootstrap 5
+- JavaScript (jQuery, AJAX)
+- Dark theme UI
+
+**AI/ML**
+- Custom Uzbek STT model
+- Python-based processing engine
+- GPU-accelerated transcription
+
+---
+
+## 🗺️ Project Status
+
+### ✅ Live Features
+- Guest trial system
+- User authentication
+- Real-time job tracking
+- Multi-format audio support
+- Responsive interface
+
+### 🚧 In Development
+- Authenticated user uploads
+- Model accuracy improvements
+- Browser audio recorder
+
+### 📅 Coming Soon
+- Multi-language interface (UZ/RU/EN)
+- Batch upload
+- Mobile apps
+- Developer API
+
+---
+
+## 👨‍💻 Team
+
+**Abbos Jovliev** - Co-Founder & Developer
+
+Responsibilities:
+- Full-stack web development (Yii2, MySQL, jQuery)
+- Frontend/Backend architecture
+- STT model training and optimization
+- System design and deployment
+
+📧 jovliyevabbosjon@gmail.com  
+🔗 [LinkedIn](https://www.linkedin.com/in/abbos-jovliev/)
+
+---
+
+## 🎯 Mission
+
+Building high-quality speech-to-text technology for the Uzbek language to support content creators, journalists, students, and businesses.
+
+---
+
+## 📄 License
+
+MIT License - feel free to learn from this project!
+
+---
+
+## 🎥 Demo
+
+**See Ovoza in action:**
+
+[📹 **Watch Demo Video**](./demos/demo.mp4)
+
+*Guest user uploading audio and receiving instant transcription without signup!*
+
+---
+
+**Built with ❤️ for the Uzbek language** 🇺🇿
