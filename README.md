@@ -104,7 +104,7 @@ MIT License - feel free to learn from this project!
 
 **See Ovoza in action:**
 
-<video src="https://github.com/jovlievs/sitora-ai/raw/main/demos/demo.mp4" controls></video>
+https://github.com/user-attachments/assets/37fc3cd1-3c17-4e00-8089-a03830c18a67
 
 Watch a guest user upload audio and receive instant transcription without any signup!
 
