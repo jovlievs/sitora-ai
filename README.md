@@ -78,6 +78,65 @@
 - Developer API
 
 ---
+---
+
+## 📂 Project Structure
+```
+ovoza/
+├── common/
+│   ├── config/              # Shared configuration files
+│   │   ├── main.php
+│   │   ├── main-local.php   # Local config (gitignored)
+│   │   └── params.php
+│   └── models/              # Database models
+│       ├── User.php         # User authentication & wallet
+│       ├── TranscriptionJob.php  # Job records
+│       ├── Task.php         # Processing tasks
+│       ├── Transaction.php  # Wallet transactions
+│       └── SystemSetting.php # App settings
+│
+├── frontend/
+│   ├── controllers/
+│   │   ├── SiteController.php         # Landing, login, signup
+│   │   └── TranscriptionController.php # Upload, dashboard, jobs
+│   ├── models/              # Frontend-specific models
+│   ├── views/
+│   │   ├── layouts/         # Page layouts
+│   │   │   ├── main.php     # Authenticated user layout
+│   │   │   ├── clean.php    # Guest/minimal layout
+│   │   │   └── dashboard.php # Dashboard layout
+│   │   ├── site/
+│   │   │   ├── index.php    # Landing page
+│   │   │   ├── login.php
+│   │   │   ├── signup.php
+│   │   │   └── guest-result.php  # Guest transcription result
+│   │   └── transcription/
+│   │       ├── index.php    # Dashboard (job list)
+│   │       └── view.php     # Job details
+│   ├── web/
+│   │   ├── css/             # Stylesheets
+│   │   ├── js/              # JavaScript files
+│   │   ├── uploads/         # User audio files
+│   │   │   └── 2026/        # Organized by date
+│   │   └── index.php        # Entry point
+│   └── config/
+│       ├── main.php
+│       └── main-local.php   # Local config (gitignored)
+│
+├── backend/                 # Admin panel (future development)
+│
+├── console/                 # CLI commands
+│   └── controllers/         # Background tasks
+│
+├── environments/            # Environment templates
+│   ├── dev/                 # Development config templates
+│   └── prod/                # Production config templates
+│
+├── vendor/                  # Composer dependencies (gitignored)
+│
+└── demos/                   # Demo videos
+    └── demo.mp4
+```
 
 ## 🎯 Mission
 
