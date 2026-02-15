@@ -79,24 +79,18 @@
 
 ---
 
-## 👨‍💻 Team
+## 🎯 Mission
 
-**Abbos Jovliev** - Co-Founder & Developer
-
-Responsibilities:
-- Full-stack web development (Yii2, MySQL, jQuery)
-- Frontend/Backend architecture
-- STT model training and optimization
-- System design and deployment
-
-📧 jovliyevabbosjon@gmail.com  
-🔗 [LinkedIn](https://www.linkedin.com/in/abbos-jovliev/)
+Building high-quality STT/TTS technology for the Uzbek language to support content creators, journalists, students, and businesses.
 
 ---
 
-## 🎯 Mission
+## 📞 Connect With Me
 
-Building high-quality speech-to-text technology for the Uzbek language to support content creators, journalists, students, and businesses.
+**Abbos Jovliev** - Co-Founder & Developer
+
+📧 [jovliyevabbosjon@gmail.com](mailto:jovliyevabbosjon@gmail.com)  
+💼 [LinkedIn](https://www.linkedin.com/in/abbos-jovliev/)
 
 ---
 
@@ -110,9 +104,9 @@ MIT License - feel free to learn from this project!
 
 **See Ovoza in action:**
 
-[📹 **Watch Demo Video**](./demos/demo.mp4)
+> *[Demo video will be embedded here]*
 
-*Guest user uploading audio and receiving instant transcription without signup!*
+Watch a guest user upload audio and receive instant transcription without any signup!
 
 ---
 
